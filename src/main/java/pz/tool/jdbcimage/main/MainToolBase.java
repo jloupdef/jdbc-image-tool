@@ -64,14 +64,12 @@ public abstract class MainToolBase implements AutoCloseable {
 	// internal
 	public boolean requireZipArgument = Boolean.valueOf(System.getProperty("requireZipArgument", "true"));
 
-
-
 	{
 		// concurrency
 		String prop = System.getProperty("tool_concurrency");
-		if (prop == null || prop.length() == 0){
+		if (prop == null || prop.length() == 0) {
 			tool_concurrency = -1;
-		} else{
+		} else {
 			tool_concurrency = Integer.valueOf(prop);
 		}
 	}
@@ -94,24 +92,23 @@ public abstract class MainToolBase implements AutoCloseable {
 				LoggedUtils.ignore("Unable to create directory " + tool_builddir, null);
 			}
 			zipFile = args[0];
-		} else if (requireZipArgument){
+		} else if (requireZipArgument) {
 			throw new IllegalArgumentException("zip file is expected as a first argument");
 		}
 	}
 
 	private File buildDirectory = null;
-	public File getBuildDirectory(){
-		if (buildDirectory == null){
-			if (tool_builddir == null || tool_builddir.trim().isEmpty()){
-				buildDirectory = new File(System.getProperty("java.io.tmpdir", "target")+"/tmp_jdbctool");
-			} else{
+
+	public File getBuildDirectory() {
+		if (buildDirectory == null) {
+			if (tool_builddir == null || tool_builddir.trim().isEmpty()) {
+				buildDirectory = new File(System.getProperty("java.io.tmpdir", "target") + "/tmp_jdbctool");
+			} else {
 				buildDirectory = new File(tool_builddir);
 			}
 		}
 		return buildDirectory;
 	}
-
-
 
 	/**
 	 * Zips files in the build directory to a configured zipFile.
@@ -150,7 +147,7 @@ public abstract class MainToolBase implements AutoCloseable {
 	 * Deletes build directory.
 	 */
 	public void deleteBuildDirectory() {
-		if (buildDirectory!=null && buildDirectory.exists()) {
+		if (buildDirectory != null && buildDirectory.exists()) {
 			long start = System.currentTimeMillis();
 			try {
 				Files.list(Paths.get(tool_builddir))
@@ -174,7 +171,7 @@ public abstract class MainToolBase implements AutoCloseable {
 	 * Unzip files.
 	 */
 	public void unzip() {
-		//extract
+		// extract
 		if (zipFile != null) {
 			try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile))) {
 				long start = System.currentTimeMillis();
@@ -208,7 +205,7 @@ public abstract class MainToolBase implements AutoCloseable {
 		int retVal = tool_concurrency;
 
 		if (retVal <= 0) {
-			retVal = Runtime.getRuntime().availableProcessors(); //ForkJoinPool.getCommonPoolParallelism();
+			retVal = Runtime.getRuntime().availableProcessors(); // ForkJoinPool.getCommonPoolParallelism();
 		}
 		if (max <= 0) {
 			return retVal;
@@ -230,7 +227,7 @@ public abstract class MainToolBase implements AutoCloseable {
 	protected long started; // filled by the started method
 	protected DBFacade dbFacade = null;
 	// tables to import, key is database table name, value is the expected output/input file name
-	protected Map<String,String> tables = null;
+	protected Map<String, String> tables = null;
 
 	public MainToolBase() {
 		initOutput();
@@ -242,7 +239,7 @@ public abstract class MainToolBase implements AutoCloseable {
 		if (tool_waitOnStartup) {
 			out.println("Paused on startup, press ENTER to continue ...");
 			try {
-				//noinspection ResultOfMethodCallIgnored
+				// noinspection ResultOfMethodCallIgnored
 				System.in.read();
 			} catch (IOException e) {
 				// should never occur
@@ -252,24 +249,26 @@ public abstract class MainToolBase implements AutoCloseable {
 		concurrency = currentConcurrencyLimit(-1);
 		started = System.currentTimeMillis();
 		out.println("Started - " + new Date(started));
-		if (url!=null && url.length()>0) out.println("Database URL: "+url);
-		if (user!=null && user.length()>0) out.println("Database user: "+user);
+		if (url != null && url.length() > 0)
+			out.println("Database URL: " + url);
+		if (user != null && user.length() > 0)
+			out.println("Database user: " + user);
 	}
 
-	protected void setTables(Map<String,String> tables, PrintStream out) {
+	protected void setTables(Map<String, String> tables, PrintStream out) {
 		this.tables = tables;
 		// check for duplicated except of case-sensitiveness
-		final boolean[] foundDuplicate = {false};
-		Map<String,String> ignoreCaseMap = new HashMap<>();
-		tables.forEach((key,value) -> {
+		final boolean[] foundDuplicate = { false };
+		Map<String, String> ignoreCaseMap = new HashMap<>();
+		tables.forEach((key, value) -> {
 			String toPut = key.toLowerCase();
 			String old = ignoreCaseMap.put(toPut, value);
-			if (old!=null){
-				out.println("Two tables with same case-insensitive name: "+old+" and "+ key);
+			if (old != null) {
+				out.println("Two tables with same case-insensitive name: " + old + " and " + key);
 				foundDuplicate[0] = true;
 			}
 		});
-		if (foundDuplicate[0]){
+		if (foundDuplicate[0]) {
 			throw new RuntimeException("Found tables with the same case-insensitive name, see the log above. Drop/rename tables so there are no conflicts!");
 		}
 
@@ -303,6 +302,7 @@ public abstract class MainToolBase implements AutoCloseable {
 	}
 
 	protected void initDataSource() {
+
 		BasicDataSource bds = new BasicDataSource();
 		bds.setUrl(url);
 		bds.setUsername(user);
@@ -311,28 +311,30 @@ public abstract class MainToolBase implements AutoCloseable {
 
 		// isolate database specific instructions
 		List<Predicate<String>> matchers = Arrays.asList(
-				dbtype -> url.startsWith("jdbc:"+dbtype),
-				dbtype -> url.contains(":"+dbtype+":")
-		);
-		for(Predicate<String> matcher: matchers){
+				dbtype -> url.startsWith("jdbc:" + dbtype),
+				dbtype -> url.contains(":" + dbtype + ":"));
+		for (Predicate<String> matcher : matchers) {
 			if (matcher.test("oracle")) {
 				dbFacade = new Oracle();
-			} else if (matcher.test("sqlserver")){
+			} else if (matcher.test("sqlserver")) {
 				dbFacade = new Mssql();
 			} else if (matcher.test("postgresql")) {
 				dbFacade = new PostgreSQL();
 			} else if (matcher.test("mysql") || matcher.test("mariadb")) {
 				dbFacade = new MariaDB();
+			} else if (matcher.test("ignite")) {
+				dbFacade = new IgniteDB();
 			}
-			if (dbFacade !=null) break;
+			if (dbFacade != null)
+				break;
 		}
-		if (dbFacade == null){
+		if (dbFacade == null) {
 			throw new IllegalArgumentException("Unsupported database type: " + url);
 		}
 
 		dbFacade.setToolBase(this);
 		dbFacade.addListeners(DBFacadeListener.getInstances(tool_listeners));
-		LoggedUtils.info("Tool listeners: "+dbFacade.listeners);
+		LoggedUtils.info("Tool listeners: " + dbFacade.listeners);
 		dbFacade.setupDataSource(bds);
 		dataSource = bds;
 	}
@@ -384,15 +386,15 @@ public abstract class MainToolBase implements AutoCloseable {
 							zis.closeEntry();
 						}
 						final File file = f;
-						entries.stream().sorted().forEach( x -> {
-								out.print(" ");
-								out.print(file);
-								out.print("#");
-								out.println(x);
+						entries.stream().sorted().forEach(x -> {
+							out.print(" ");
+							out.print(file);
+							out.print("#");
+							out.println(x);
 						});
 						out.println();
-						if (!zipFile.isEmpty()){
-							throw new IllegalArgumentException("No file named '"+zipFile+"' found in: " + f);
+						if (!zipFile.isEmpty()) {
+							throw new IllegalArgumentException("No file named '" + zipFile + "' found in: " + f);
 						}
 						zis.close();
 					} catch (IOException e) {
@@ -431,7 +433,8 @@ public abstract class MainToolBase implements AutoCloseable {
 	}
 
 	/**
-	 * Run the specified tasks concurrently or serially depending on configured concurrency.
+	 * Run the specified tasks concurrently or serially depending on configured
+	 * concurrency.
 	 *
 	 * @param tasks tasks to execute
 	 * @throws RuntimeException if any of the tasks failed.
@@ -544,14 +547,15 @@ public abstract class MainToolBase implements AutoCloseable {
 		}
 	}
 
-	public static String[] setupSystemProperties(String... args){
-		if (args == null) args = new String[0];
+	public static String[] setupSystemProperties(String... args) {
+		if (args == null)
+			args = new String[0];
 		ArrayList<String> retVal = new ArrayList<>(args.length);
 		int index;
-		for(String s: args){
-			if (s.startsWith("-") && (index=s.indexOf('=',1)) > 0){
-				System.setProperty(s.substring(1,index),s.substring(index+1));
-			} else{
+		for (String s : args) {
+			if (s.startsWith("-") && (index = s.indexOf('=', 1)) > 0) {
+				System.setProperty(s.substring(1, index), s.substring(index + 1));
+			} else {
 				retVal.add(s);
 			}
 		}

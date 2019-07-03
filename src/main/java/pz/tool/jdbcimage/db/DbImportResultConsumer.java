@@ -113,6 +113,7 @@ public class DbImportResultConsumer implements ResultConsumer<RowData>{
                             case Types.BINARY:
                                 stmt.setBytes(pos, (byte[])value);
                                 break;
+                            case Types.BOOLEAN:
                             case Types.BIT:
                                 stmt.setBoolean(pos, (Boolean)value);
                                 break;
@@ -189,9 +190,13 @@ public class DbImportResultConsumer implements ResultConsumer<RowData>{
                                     } else{
                                         stmt.setClob(pos, (Clob)value);
                                     }
-                                } else{
+                                } else {
                                     throw new IllegalStateException("Unexpected value found for clob: "+value);
                                 }
+                                break;
+                            case Types.OTHER:
+                                log.warn("WARNING: encountered Unknown type " + value.getClass().getSimpleName() +" with value "+value.toString());
+                                stmt.setObject(pos, value);
                                 break;
                             default:
                                 throw new IllegalStateException("Unable to set SQL type: "+type+" for value: "+value);
