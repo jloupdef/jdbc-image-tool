@@ -6,6 +6,8 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.FastInput;

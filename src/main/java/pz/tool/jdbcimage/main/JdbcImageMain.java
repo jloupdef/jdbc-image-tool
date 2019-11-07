@@ -1,10 +1,15 @@
 package pz.tool.jdbcimage.main;
 
+import java.util.TimeZone;
+
 public class JdbcImageMain {
     private static void help(){
         System.out.println("See documentation at https://github.com/sranka/jdbc-image-tool");
     }
     public static void main(String... args)  throws Exception{
+
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+
         args = MainToolBase.setupSystemProperties(args);
         String action = args.length>0?args[0]:null;
         if (action!=null) {

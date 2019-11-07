@@ -9,7 +9,9 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.sql.*;
+import java.time.ZoneOffset;
 import java.util.Map;
+import java.util.TimeZone;
 
 /**
  * Import pushed data into a database.
@@ -132,7 +134,8 @@ public class DbImportResultConsumer implements ResultConsumer<RowData>{
                                 stmt.setTime(pos, (Time)value);
                                 break;
                             case Types.TIMESTAMP:
-                                stmt.setTimestamp(pos, (Timestamp)value);
+                                Timestamp v = new Timestamp(((Timestamp) value).getTime()+((Timestamp) value).getTimezoneOffset()*60L*1000L);
+                                stmt.setTimestamp(pos, v);
                                 break;
                             case Types.DECIMAL:
                             case Types.NUMERIC:
